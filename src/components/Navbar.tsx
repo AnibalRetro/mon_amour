@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, Instagram, Facebook, Twitter } from 'lucide-react';
@@ -32,14 +33,13 @@ export const Navbar = () => {
       <div className="max-w-7xl mx-auto flex justify-between items-center">
         <Link to="/" className="flex flex-col items-center group">
           <span className="text-2xl md:text-3xl font-serif tracking-[0.2em] uppercase transition-colors group-hover:text-brand-gold">
-            Maison de Grâce
+            Mon Amour
           </span>
           <span className="text-[8px] md:text-[10px] uppercase tracking-[0.5em] text-brand-gray -mt-1">
             Modeling Agency
           </span>
         </Link>
 
-        {/* Desktop Nav */}
         <div className="hidden md:flex items-center space-x-12">
           {navLinks.map((link) => (
             <Link
@@ -65,13 +65,11 @@ export const Navbar = () => {
           </Link>
         </div>
 
-        {/* Mobile Toggle */}
         <button className="md:hidden" onClick={() => setIsOpen(true)}>
           <Menu className="w-6 h-6" />
         </button>
       </div>
 
-      {/* Mobile Menu */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
