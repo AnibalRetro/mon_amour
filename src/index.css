@@ -1,13 +1,13 @@
 @import "tailwindcss";
 
 @theme {
-  --color-brand-black: #0A0A0A;
-  --color-brand-ivory: #F6F1E8;
-  --color-brand-gold: #C7A46A;
-  --color-brand-gray: #77716B;
-  --color-brand-burgundy: #4A1E28;
-  --color-brand-rose: #B63E5A;
-  --color-brand-wine: #6B1930;
+  --color-brand-black: #0b0810;
+  --color-brand-ivory: #f8efe8;
+  --color-brand-gold: #d9a46d;
+  --color-brand-gray: #8d7d7f;
+  --color-brand-burgundy: #5b1328;
+  --color-brand-rose: #c45a74;
+  --color-brand-wine: #7a1834;
 
   --font-serif: "Playfair Display", serif;
   --font-sans: "Inter", sans-serif;
@@ -17,8 +17,14 @@
   body {
     @apply bg-brand-ivory text-brand-black font-sans antialiased;
   }
+
   h1, h2, h3, h4, h5, h6 {
     @apply font-serif;
+  }
+
+  ::selection {
+    background: rgba(196, 90, 116, 0.28);
+    color: #0b0810;
   }
 }
 
@@ -27,5 +33,9 @@
 }
 
 .premium-shadow {
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 20px 55px -25px rgba(38, 7, 18, 0.35);
+}
+
+.sensual-gradient {
+  background: linear-gradient(135deg, rgba(122, 24, 52, 0.92), rgba(11, 8, 16, 0.96));
 }

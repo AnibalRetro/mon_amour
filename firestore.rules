@@ -1,71 +1,22 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // ===============================================================
-    // Assumed Data Model
-    // ===============================================================
-    // Collection: models
-    // - name: string (required)
-    // - slug: string (required)
-    // - cover: string (required)
-    // - gallery: list (optional)
-    // - city: string (required)
-    // - category: string (required)
-    // - active: bool (required)
-    //
-    // Collection: leads
-    // - type: string (required, enum)
-    // - name: string (required)
-    // - email: string (required, email)
-    // - status: string (required, enum)
-    // ===============================================================
-
-    // Helper Functions
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-
-    function isAdmin() {
-      return isAuthenticated() && 
-        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
-         (request.auth.token.email == "joss2608@gmail.com" && request.auth.token.email_verified == true));
-    }
-
-    function isValidEmail(email) {
-      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
-    }
-
-    function isValidModel(data) {
-      return data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
-             data.slug is string && data.slug.size() > 0 &&
-             data.city is string &&
-             data.category is string &&
-             data.active is bool;
-    }
-
-    function isValidLead(data) {
-      return data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
-             isValidEmail(data.email) &&
-             data.type in ['commercial', 'booking', 'applicant', 'direct'] &&
-             data.status in ['new', 'contacted', 'follow-up', 'closed'];
-    }
-
-    // Rules
+    // Temporary permissive rules for Mon Amour while the admin panel
+    // is operating without Firebase Authentication. Tighten before production.
     match /models/{modelId} {
-      allow read: if true; // Public catalog
-      allow write: if isAdmin() && isValidModel(request.resource.data);
+      allow read, write: if true;
     }
 
     match /leads/{leadId} {
-      allow read: if isAdmin();
-      allow create: if isValidLead(request.resource.data);
-      allow update: if isAdmin() && isValidLead(request.resource.data);
-      allow delete: if isAdmin();
+      allow read, write: if true;
+    }
+
+    match /reservations/{reservationId} {
+      allow read, write: if true;
     }
 
     match /users/{userId} {
-      allow read, write: if request.auth.uid == userId || isAdmin();
+      allow read, write: if true;
     }
   }
 }
