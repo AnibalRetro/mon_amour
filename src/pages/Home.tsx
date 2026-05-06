@@ -8,6 +8,7 @@ import { ArrowRight, Star, Shield, Zap } from 'lucide-react';
 import { db } from '@/firebase';
 import { collection, getDocs } from 'firebase/firestore';
 import { mergeById, readLocalCollection } from '@/lib/localData';
+import heroMonAmour from '@/assets/hero-mon-amour.jpeg';
 
 interface HomeModel {
   id: string;
@@ -71,15 +72,15 @@ export const Home = () => {
           className="absolute inset-0"
         >
           <img
-            src="https://picsum.photos/seed/fashion-hero/1920/1080"
+            src={heroMonAmour}
             alt="Hero"
             className="w-full h-full object-cover grayscale"
-            referrerPolicy="no-referrer"
           />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(190,92,120,0.18),transparent_55%),linear-gradient(180deg,rgba(10,7,11,0.35),rgba(10,7,11,0.75))]" />
         </motion.div>
 
         <div className="relative z-10 text-center space-y-8 px-6">
+
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -216,3 +217,4 @@ export const Home = () => {
     </div>
   );
 };
+
