@@ -6,13 +6,14 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
-import { Home } from '@/pages/Home';
-import { About } from '@/pages/About';
-import { Catalog } from '@/pages/Catalog';
-import { Contact } from '@/pages/Contact';
-import { AdminPortal } from '@/pages/AdminPortal';
 import { motion, AnimatePresence } from 'framer-motion';
-import React, { useEffect } from 'react';
+import React, { Suspense, lazy, useEffect } from 'react';
+
+const Home = lazy(() => import('@/pages/Home').then((module) => ({ default: module.Home })));
+const About = lazy(() => import('@/pages/About').then((module) => ({ default: module.About })));
+const Catalog = lazy(() => import('@/pages/Catalog').then((module) => ({ default: module.Catalog })));
+const Contact = lazy(() => import('@/pages/Contact').then((module) => ({ default: module.Contact })));
+const AdminPortal = lazy(() => import('@/pages/AdminPortal').then((module) => ({ default: module.AdminPortal })));
 
 const PageWrapper = ({ children }: { children: React.ReactNode }) => (
   <motion.div
@@ -23,6 +24,12 @@ const PageWrapper = ({ children }: { children: React.ReactNode }) => (
   >
     {children}
   </motion.div>
+);
+
+const PageFallback = () => (
+  <div className="flex min-h-[40vh] items-center justify-center text-sm text-brand-charcoal/70">
+    Cargando…
+  </div>
 );
 
 export default function App() {
@@ -47,15 +54,17 @@ function AppLayout() {
     <div className="flex flex-col min-h-screen">
       {!hideChrome && <Navbar />}
       <main className="flex-grow">
-        <AnimatePresence mode="wait">
-          <Routes>
-            <Route path="/" element={<PageWrapper><Home /></PageWrapper>} />
-            <Route path="/nosotros" element={<PageWrapper><About /></PageWrapper>} />
-            <Route path="/catalogo" element={<PageWrapper><Catalog /></PageWrapper>} />
-            <Route path="/contacto" element={<PageWrapper><Contact /></PageWrapper>} />
-            <Route path="/admin" element={<PageWrapper><AdminPortal /></PageWrapper>} />
-          </Routes>
-        </AnimatePresence>
+        <Suspense fallback={<PageFallback />}>
+          <AnimatePresence mode="wait">
+            <Routes>
+              <Route path="/" element={<PageWrapper><Home /></PageWrapper>} />
+              <Route path="/nosotros" element={<PageWrapper><About /></PageWrapper>} />
+              <Route path="/catalogo" element={<PageWrapper><Catalog /></PageWrapper>} />
+              <Route path="/contacto" element={<PageWrapper><Contact /></PageWrapper>} />
+              <Route path="/admin" element={<PageWrapper><AdminPortal /></PageWrapper>} />
+            </Routes>
+          </AnimatePresence>
+        </Suspense>
       </main>
       {!hideChrome && <Footer />}
       {showLogoutToast && (
