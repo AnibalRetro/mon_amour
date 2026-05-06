@@ -32,7 +32,7 @@ import { Modal } from '@/components/ui/Modal';
 import { cn } from '@/lib/utils';
 import { createLocalId, fileToDataUrl, mergeById, readLocalCollection, removeLocalRecord, upsertLocalRecord, writeLocalCollection } from '@/lib/localData';
 
-type AdminTab = 'reservations' | 'models' | 'contacts' | 'users';
+type AdminTab = 'reservations' | 'models' | 'contacts' | 'pages' | 'users';
 type UserRole = 'admin' | 'modelo' | 'marketing';
 type ReservationStatus = 'new' | 'active' | 'completed' | 'cancelled';
 type ReservationViewMode = 'list' | 'kanban';
@@ -131,7 +131,32 @@ const sortReservations = (items: ReservationRecord[]) => [...items].sort((a, b) 
 const sortLeads = (items: LeadRecord[]) => [...items].sort((a, b) => String((b.created_at as any) || '').localeCompare(String((a.created_at as any) || '')));
 const emptyModelForm = { name: '', slug: '', city: '', category: '', short_desc: '', full_desc: '', height: '', experience: '', languages: '', tags: '', featured: false };
 const statusLabel: Record<ReservationStatus, string> = { new: 'Nuevas', active: 'Activas', completed: 'Pasadas', cancelled: 'Canceladas' };
-const permissionOptions = ['reservations:view', 'models:view', 'contacts:view', 'users:manage'];
+const permissionOptions = ['reservations:view', 'models:view', 'contacts:view', 'pages:edit', 'users:manage'];
+
+interface PageBlockDraft {
+  id: string;
+  title: string;
+  text: string;
+  image: string;
+  alignment: 'left' | 'center' | 'right';
+  position: string;
+  layout: string;
+}
+
+interface PageDraft {
+  id: string;
+  slug: string;
+  name: string;
+  blocks: PageBlockDraft[];
+  updatedAt?: string;
+}
+
+const defaultPageDrafts: PageDraft[] = [
+  { id: 'home', slug: '/', name: 'Inicio', blocks: [{ id: 'home-hero', title: 'Hero', text: '', image: '', alignment: 'center', position: 'Superior', layout: 'Hero a pantalla completa' }] },
+  { id: 'catalog', slug: '/catalogo', name: 'Catálogo', blocks: [{ id: 'catalog-grid', title: 'Listado principal', text: '', image: '', alignment: 'left', position: 'Centro', layout: 'Grid de modelos' }] },
+  { id: 'about', slug: '/nosotros', name: 'Nosotros', blocks: [{ id: 'about-story', title: 'Historia', text: '', image: '', alignment: 'left', position: 'Centro', layout: 'Sección de contenido' }] },
+  { id: 'contact', slug: '/contacto', name: 'Contacto', blocks: [{ id: 'contact-form', title: 'Formulario', text: '', image: '', alignment: 'left', position: 'Inferior', layout: 'Formulario + datos' }] },
+];
 
 export const AdminPortal = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(sessionStorage.getItem(SESSION_KEY) === 'true');
@@ -147,6 +172,8 @@ export const AdminPortal = () => {
   const [models, setModels] = useState<ModelRecord[]>([]);
   const [reservations, setReservations] = useState<ReservationRecord[]>([]);
   const [leads, setLeads] = useState<LeadRecord[]>([]);
+  const [pages, setPages] = useState<PageDraft[]>(readLocalCollection<PageDraft>('pagesDraft').length ? readLocalCollection<PageDraft>('pagesDraft') : defaultPageDrafts);
+  const [selectedPageId, setSelectedPageId] = useState<string>(defaultPageDrafts[0].id);
 
   const [selectedModelId, setSelectedModelId] = useState('');
   const [calendarMonth, setCalendarMonth] = useState(new Date());
@@ -531,6 +558,37 @@ export const AdminPortal = () => {
     return Array.from(map.values()).sort((a, b) => b.total - a.total);
   }, [reservations]);
 
+
+  const selectedPage = useMemo(() => pages.find((page) => page.id === selectedPageId) || null, [pages, selectedPageId]);
+
+  const savePages = (next: PageDraft[]) => {
+    setPages(next);
+    writeLocalCollection('pagesDraft', next);
+  };
+
+  const updatePageBlock = (pageId: string, blockId: string, field: keyof PageBlockDraft, value: string) => {
+    const next = pages.map((page) => page.id !== pageId ? page : ({
+      ...page,
+      updatedAt: new Date().toISOString(),
+      blocks: page.blocks.map((block) => block.id !== blockId ? block : { ...block, [field]: value }),
+    }));
+    savePages(next);
+  };
+
+  const addBlockToPage = (pageId: string) => {
+    const next = pages.map((page) => page.id !== pageId ? page : ({
+      ...page,
+      updatedAt: new Date().toISOString(),
+      blocks: [...page.blocks, { id: createLocalId('page-block'), title: 'Nuevo bloque', text: '', image: '', alignment: 'left', position: 'Centro', layout: 'Contenido libre' }],
+    }));
+    savePages(next);
+  };
+
+  const removeBlockFromPage = (pageId: string, blockId: string) => {
+    const next = pages.map((page) => page.id !== pageId ? page : ({ ...page, updatedAt: new Date().toISOString(), blocks: page.blocks.filter((block) => block.id !== blockId) }));
+    savePages(next);
+  };
+
   if (loading) return <div className="h-screen flex items-center justify-center bg-brand-ivory"><div className="w-12 h-12 border-2 border-brand-gold border-t-transparent rounded-full animate-spin" /></div>;
 
   if (!isAuthenticated) {
@@ -557,7 +615,7 @@ export const AdminPortal = () => {
       <aside className="w-72 bg-brand-black text-brand-ivory flex flex-col shrink-0">
         <div className="p-8 border-b border-white/10"><p className="text-[10px] uppercase tracking-[0.45em] text-brand-gold mb-2">Administrador</p><h2 className="text-2xl font-serif tracking-[0.18em] uppercase">Mon Amour</h2></div>
         <nav className="flex-1 p-6 space-y-2">
-          {[canSeeReservations && { id: 'reservations', icon: CalendarDays, label: 'Panel de Reservas' }, canSeeModels && { id: 'models', icon: Users, label: 'Panel de Modelos' }, canSeeContacts && { id: 'contacts', icon: MessageSquare, label: 'Panel de Contacto' }, isAdmin && { id: 'users', icon: Users, label: 'Panel de Usuarios' }].filter(Boolean).map((tab: any) => (
+          {[canSeeReservations && { id: 'reservations', icon: CalendarDays, label: 'Panel de Reservas' }, canSeeModels && { id: 'models', icon: Users, label: 'Panel de Modelos' }, canSeeModels && { id: 'pages', icon: Edit2, label: 'Editor de páginas' }, canSeeContacts && { id: 'contacts', icon: MessageSquare, label: 'Panel de Contacto' }, isAdmin && { id: 'users', icon: Users, label: 'Panel de Usuarios' }].filter(Boolean).map((tab: any) => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id as AdminTab)} className={cn('w-full flex items-center space-x-4 px-4 py-3 text-sm transition-all', activeTab === tab.id ? 'bg-brand-gold text-brand-black' : 'hover:bg-white/5')}><tab.icon className="w-4 h-4" /><span>{tab.label}</span></button>
           ))}
         </nav>
@@ -568,7 +626,7 @@ export const AdminPortal = () => {
         <header className="flex justify-between items-center mb-10 gap-4 flex-wrap">
           <div>
             <p className="text-[10px] uppercase tracking-[0.4em] text-brand-gold">Backoffice</p>
-            <h1 className="text-3xl font-serif mt-2">{activeTab === 'reservations' ? 'Reservas y clientes' : activeTab === 'models' ? 'Gestión de modelos' : activeTab === 'contacts' ? 'Seguimiento de contactos' : 'Gestión de usuarios'}</h1>
+            <h1 className="text-3xl font-serif mt-2">{activeTab === 'reservations' ? 'Reservas y clientes' : activeTab === 'models' ? 'Gestión de modelos' : activeTab === 'pages' ? 'Editor de páginas' : activeTab === 'contacts' ? 'Seguimiento de contactos' : 'Gestión de usuarios'}</h1>
           </div>
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-white px-5 py-4 premium-shadow"><p className="text-[10px] uppercase tracking-widest text-brand-gray">Modelos</p><p className="text-2xl font-serif">{models.length}</p></div>
@@ -764,6 +822,46 @@ export const AdminPortal = () => {
                 </tbody>
               </table>
             </div>
+          </div>
+        )}
+
+        {activeTab === 'pages' && (
+          <div className="space-y-6">
+            <div className="bg-white p-6 premium-shadow space-y-3">
+              <p className="text-sm text-brand-gray">Edita textos, ubicación, alineación, imágenes y estructura por bloque sin alterar la maquetación actual del sitio en producción.</p>
+              <div className="flex flex-wrap gap-3">
+                {pages.map((page) => (
+                  <button key={page.id} onClick={() => setSelectedPageId(page.id)} className={cn('px-4 py-2 border text-sm', selectedPageId === page.id ? 'bg-brand-black text-brand-ivory border-brand-black' : 'border-brand-black/10')}>
+                    {page.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {selectedPage && (
+              <div className="bg-white p-6 premium-shadow space-y-5">
+                <div className="flex items-center justify-between">
+                  <div><h3 className="text-2xl font-serif">{selectedPage.name}</h3><p className="text-xs text-brand-gray">Ruta: {selectedPage.slug}</p></div>
+                  <Button onClick={() => addBlockToPage(selectedPage.id)} className="space-x-2"><Plus className="w-4 h-4" /><span>Agregar bloque</span></Button>
+                </div>
+                <div className="space-y-4">
+                  {selectedPage.blocks.map((block) => (
+                    <div key={block.id} className="border border-brand-black/10 p-4 space-y-3">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <input value={block.title} onChange={(e) => updatePageBlock(selectedPage.id, block.id, 'title', e.target.value)} placeholder="Título del bloque" className="border border-brand-black/10 px-3 py-2" />
+                        <input value={block.image} onChange={(e) => updatePageBlock(selectedPage.id, block.id, 'image', e.target.value)} placeholder="URL de imagen" className="border border-brand-black/10 px-3 py-2" />
+                        <input value={block.position} onChange={(e) => updatePageBlock(selectedPage.id, block.id, 'position', e.target.value)} placeholder="Ubicación" className="border border-brand-black/10 px-3 py-2" />
+                        <input value={block.layout} onChange={(e) => updatePageBlock(selectedPage.id, block.id, 'layout', e.target.value)} placeholder="Estructura del bloque" className="border border-brand-black/10 px-3 py-2" />
+                        <select value={block.alignment} onChange={(e) => updatePageBlock(selectedPage.id, block.id, 'alignment', e.target.value)} className="border border-brand-black/10 px-3 py-2">
+                          <option value="left">Alineación izquierda</option><option value="center">Alineación centro</option><option value="right">Alineación derecha</option>
+                        </select>
+                        <button onClick={() => removeBlockFromPage(selectedPage.id, block.id)} className="border border-red-200 text-red-600 px-3 py-2 text-sm">Eliminar bloque</button>
+                      </div>
+                      <textarea value={block.text} onChange={(e) => updatePageBlock(selectedPage.id, block.id, 'text', e.target.value)} rows={4} placeholder="Texto del bloque" className="w-full border border-brand-black/10 px-3 py-2" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
