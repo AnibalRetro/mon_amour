@@ -96,6 +96,11 @@ interface UserRecord {
   username: string;
   password: string;
   role: UserRole;
+  fullName?: string;
+  email?: string;
+  phone?: string;
+  modelId?: string;
+  permissions?: string[];
 }
 
 const SESSION_KEY = 'mon-amour-admin-session';
@@ -126,6 +131,7 @@ const sortReservations = (items: ReservationRecord[]) => [...items].sort((a, b) 
 const sortLeads = (items: LeadRecord[]) => [...items].sort((a, b) => String((b.created_at as any) || '').localeCompare(String((a.created_at as any) || '')));
 const emptyModelForm = { name: '', slug: '', city: '', category: '', short_desc: '', full_desc: '', height: '', experience: '', languages: '', tags: '', featured: false };
 const statusLabel: Record<ReservationStatus, string> = { new: 'Nuevas', active: 'Activas', completed: 'Pasadas', cancelled: 'Canceladas' };
+const permissionOptions = ['reservations:view', 'models:view', 'contacts:view', 'users:manage'];
 
 export const AdminPortal = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(sessionStorage.getItem(SESSION_KEY) === 'true');
@@ -133,7 +139,8 @@ export const AdminPortal = () => {
   const [loginError, setLoginError] = useState('');
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [currentUser, setCurrentUser] = useState<UserRecord | null>(null);
-  const [newUser, setNewUser] = useState({ username: '', password: '', role: 'modelo' as UserRole });
+  const [newUser, setNewUser] = useState({ username: '', password: '', role: 'modelo' as UserRole, fullName: '', email: '', phone: '', modelId: '', permissions: [] as string[] });
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<AdminTab>('reservations');
   const [loading, setLoading] = useState(true);
 
@@ -163,7 +170,7 @@ export const AdminPortal = () => {
   useEffect(() => {
     const seeded = readLocalCollection<UserRecord>('users');
     if (!seeded.length) {
-      writeLocalCollection('users', [{ id: 'admin-default', username: DEFAULT_USER, password: DEFAULT_PASSWORD, role: 'admin' }]);
+      writeLocalCollection('users', [{ id: 'admin-default', username: DEFAULT_USER, password: DEFAULT_PASSWORD, role: 'admin', fullName: 'Administrador' }]);
     }
     setUsers(readLocalCollection<UserRecord>('users'));
     if (isAuthenticated) fetchData();
@@ -437,6 +444,35 @@ export const AdminPortal = () => {
   };
 
   const selectedModel = useMemo(() => models.find((item) => item.id === selectedModelId) || null, [models, selectedModelId]);
+  const saveUsers = (nextUsers: UserRecord[]) => {
+    setUsers(nextUsers);
+    writeLocalCollection('users', nextUsers);
+    if (currentUser) {
+      const refreshed = nextUsers.find((user) => user.id === currentUser.id);
+      if (refreshed) {
+        setCurrentUser(refreshed);
+        sessionStorage.setItem(USERS_KEY, JSON.stringify(refreshed));
+      }
+    }
+  };
+  const upsertUser = () => {
+    if (!newUser.username || !newUser.password) return;
+    const record: UserRecord = {
+      id: editingUserId || createLocalId('user'),
+      username: newUser.username.trim(),
+      password: newUser.password,
+      role: newUser.role,
+      fullName: newUser.fullName.trim(),
+      email: newUser.email.trim(),
+      phone: newUser.phone.trim(),
+      modelId: newUser.modelId || undefined,
+      permissions: newUser.permissions,
+    };
+    const next = editingUserId ? users.map((user) => user.id === editingUserId ? record : user) : [...users, record];
+    saveUsers(next);
+    setEditingUserId(null);
+    setNewUser({ username: '', password: '', role: 'modelo', fullName: '', email: '', phone: '', modelId: '', permissions: [] });
+  };
   const selectedModelReservations = useMemo(() => reservations.filter((reservation) => !selectedModelId || reservation.modelId === selectedModelId), [reservations, selectedModelId]);
   const reservedDates = useMemo(() => new Set(selectedModelReservations.filter((item) => item.status !== 'cancelled').map((item) => item.reservationDate)), [selectedModelReservations]);
   const todayKey = formatCalendarKey(today);
@@ -459,7 +495,7 @@ export const AdminPortal = () => {
   const visibleReservations = useMemo(() => {
     const base = reservations.filter((reservation) => (selectedModelId ? reservation.modelId === selectedModelId : true));
     const roleScoped = currentUser?.role === 'modelo'
-      ? base.filter((reservation) => reservation.status === 'active' && reservation.modelName.toLowerCase().includes(currentUser.username.toLowerCase()))
+      ? base.filter((reservation) => currentUser.modelId ? reservation.modelId === currentUser.modelId : reservation.modelName.toLowerCase().includes(currentUser.username.toLowerCase()))
       : base;
     return roleScoped.filter((reservation) => {
       if (reservationPeriod === 'day') return reservation.reservationDate === reservationDateFilter;
@@ -787,13 +823,41 @@ export const AdminPortal = () => {
         {activeTab === 'users' && isAdmin && (
           <div className="space-y-6">
             <div className="bg-white p-6 premium-shadow space-y-4">
-              <h3 className="text-2xl font-serif">Crear usuario</h3>
+              <h3 className="text-2xl font-serif">{editingUserId ? 'Editar usuario' : 'Crear usuario'}</h3>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <input value={newUser.username} onChange={(e) => setNewUser((prev) => ({ ...prev, username: e.target.value }))} placeholder="Usuario" className="border border-brand-black/10 px-4 py-3" />
                 <input value={newUser.password} onChange={(e) => setNewUser((prev) => ({ ...prev, password: e.target.value }))} placeholder="Contraseña" className="border border-brand-black/10 px-4 py-3" />
                 <select value={newUser.role} onChange={(e) => setNewUser((prev) => ({ ...prev, role: e.target.value as UserRole }))} className="border border-brand-black/10 px-4 py-3"><option value="admin">admin</option><option value="modelo">modelo</option><option value="marketing">marketing</option></select>
-                <Button onClick={() => { const record = { id: createLocalId('user'), ...newUser }; const next = [...users, record]; setUsers(next); writeLocalCollection('users', next); setNewUser({ username: '', password: '', role: 'modelo' }); }}>Crear</Button>
+                <Button onClick={upsertUser}>{editingUserId ? 'Guardar' : 'Crear'}</Button>
+                <input value={newUser.fullName} onChange={(e) => setNewUser((prev) => ({ ...prev, fullName: e.target.value }))} placeholder="Nombre completo" className="border border-brand-black/10 px-4 py-3 md:col-span-2" />
+                <input value={newUser.email} onChange={(e) => setNewUser((prev) => ({ ...prev, email: e.target.value }))} placeholder="Correo" className="border border-brand-black/10 px-4 py-3" />
+                <input value={newUser.phone} onChange={(e) => setNewUser((prev) => ({ ...prev, phone: e.target.value }))} placeholder="Teléfono" className="border border-brand-black/10 px-4 py-3" />
+                <select value={newUser.modelId} onChange={(e) => setNewUser((prev) => ({ ...prev, modelId: e.target.value }))} className="border border-brand-black/10 px-4 py-3 md:col-span-2">
+                  <option value="">Sin vincular modelo</option>
+                  {models.map((model) => <option key={model.id} value={model.id}>{model.name}</option>)}
+                </select>
               </div>
+              <div className="flex flex-wrap gap-2">
+                {permissionOptions.map((permission) => (
+                  <button key={permission} type="button" onClick={() => setNewUser((prev) => ({ ...prev, permissions: prev.permissions.includes(permission) ? prev.permissions.filter((item) => item !== permission) : [...prev.permissions, permission] }))} className={cn('px-3 py-2 text-[10px] uppercase tracking-widest border', newUser.permissions.includes(permission) ? 'bg-brand-black text-brand-ivory border-brand-black' : 'border-brand-black/10')}>
+                    {permission}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="bg-white p-6 premium-shadow overflow-x-auto">
+              <table className="w-full text-left">
+                <thead className="bg-brand-black text-brand-ivory text-[10px] uppercase tracking-widest"><tr><th className="p-4">Usuario</th><th className="p-4">Nombre</th><th className="p-4">Contacto</th><th className="p-4">Rol</th><th className="p-4">Modelo vinculada</th><th className="p-4">Permisos</th><th className="p-4 text-right">Acciones</th></tr></thead>
+                <tbody className="divide-y divide-brand-black/5">
+                  {users.map((user) => (
+                    <tr key={user.id}>
+                      <td className="p-4 text-sm">{user.username}</td><td className="p-4 text-sm">{user.fullName || '-'}</td><td className="p-4 text-sm">{user.email || '-'}<br />{user.phone || '-'}</td><td className="p-4 text-sm">{user.role}</td>
+                      <td className="p-4 text-sm">{models.find((model) => model.id === user.modelId)?.name || '-'}</td><td className="p-4 text-xs">{(user.permissions || []).join(', ') || '-'}</td>
+                      <td className="p-4 text-right space-x-3"><button onClick={() => { setEditingUserId(user.id); setNewUser({ username: user.username, password: user.password, role: user.role, fullName: user.fullName || '', email: user.email || '', phone: user.phone || '', modelId: user.modelId || '', permissions: user.permissions || [] }); }} className="text-brand-gray hover:text-brand-gold transition-colors"><Edit2 className="w-4 h-4" /></button><button onClick={() => saveUsers(users.filter((item) => item.id !== user.id))} className="text-brand-gray hover:text-red-600 transition-colors"><Trash2 className="w-4 h-4" /></button></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         )}

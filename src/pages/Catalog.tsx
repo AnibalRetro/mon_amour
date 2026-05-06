@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ModelCard } from '@/components/ui/ModelCard';
+import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { db } from '@/firebase';
 import { addDoc, collection, getDocs, serverTimestamp } from 'firebase/firestore';
@@ -166,7 +167,7 @@ export const Catalog = () => {
   const reservedDates = useMemo(() => new Set(selectedModelReservations.map((reservation) => reservation.reservationDate)), [selectedModelReservations]);
   const calendarDays = useMemo(() => buildCalendar(calendarMonth), [calendarMonth]);
 
-  const handleReservationSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleReservationSubmit = async (event: import('react').FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!selectedModel || !selectedDate) return;
 
