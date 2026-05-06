@@ -315,7 +315,7 @@ export const Catalog = () => {
               </div>
 
               <div className="flex flex-wrap gap-2">
-                {selectedModel.tags.map((tag) => <span key={tag} className="text-[9px] uppercase tracking-widest bg-brand-black/5 px-3 py-1">#{tag}</span>)}
+                {(selectedModel.tags || []).map((tag) => <span key={tag} className="text-[9px] uppercase tracking-widest bg-brand-black/5 px-3 py-1">#{tag}</span>)}
               </div>
 
               <div className="space-y-4 border border-brand-black/5 p-6 rounded-sm bg-brand-ivory/50">

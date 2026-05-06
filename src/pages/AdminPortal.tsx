@@ -32,7 +32,8 @@ import { Modal } from '@/components/ui/Modal';
 import { cn } from '@/lib/utils';
 import { createLocalId, fileToDataUrl, mergeById, readLocalCollection, removeLocalRecord, upsertLocalRecord, writeLocalCollection } from '@/lib/localData';
 
-type AdminTab = 'reservations' | 'models' | 'contacts';
+type AdminTab = 'reservations' | 'models' | 'contacts' | 'users';
+type UserRole = 'admin' | 'modelo' | 'marketing';
 type ReservationStatus = 'new' | 'active' | 'completed' | 'cancelled';
 type ReservationViewMode = 'list' | 'kanban';
 type ReservationPeriod = 'all' | 'day' | 'month' | 'year';
@@ -90,8 +91,15 @@ interface LeadRecord {
   portfolio_url?: string;
   created_at?: unknown;
 }
+interface UserRecord {
+  id: string;
+  username: string;
+  password: string;
+  role: UserRole;
+}
 
 const SESSION_KEY = 'mon-amour-admin-session';
+const USERS_KEY = 'mon-amour-users';
 const DEFAULT_USER = import.meta.env.VITE_ADMIN_USER || 'admin';
 const DEFAULT_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'monamour2026';
 const today = new Date();
@@ -123,6 +131,9 @@ export const AdminPortal = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(sessionStorage.getItem(SESSION_KEY) === 'true');
   const [credentials, setCredentials] = useState({ username: '', password: '' });
   const [loginError, setLoginError] = useState('');
+  const [users, setUsers] = useState<UserRecord[]>([]);
+  const [currentUser, setCurrentUser] = useState<UserRecord | null>(null);
+  const [newUser, setNewUser] = useState({ username: '', password: '', role: 'modelo' as UserRole });
   const [activeTab, setActiveTab] = useState<AdminTab>('reservations');
   const [loading, setLoading] = useState(true);
 
@@ -150,6 +161,11 @@ export const AdminPortal = () => {
   const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
 
   useEffect(() => {
+    const seeded = readLocalCollection<UserRecord>('users');
+    if (!seeded.length) {
+      writeLocalCollection('users', [{ id: 'admin-default', username: DEFAULT_USER, password: DEFAULT_PASSWORD, role: 'admin' }]);
+    }
+    setUsers(readLocalCollection<UserRecord>('users'));
     if (isAuthenticated) fetchData();
     else setLoading(false);
   }, [isAuthenticated]);
@@ -193,9 +209,12 @@ export const AdminPortal = () => {
 
   const handleLogin = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (credentials.username === DEFAULT_USER && credentials.password === DEFAULT_PASSWORD) {
+    const foundUser = users.find((user) => user.username === credentials.username && user.password === credentials.password);
+    if (foundUser) {
       sessionStorage.setItem(SESSION_KEY, 'true');
+      sessionStorage.setItem(USERS_KEY, JSON.stringify(foundUser));
       setIsAuthenticated(true);
+      setCurrentUser(foundUser);
       setLoginError('');
       return;
     }
@@ -204,9 +223,24 @@ export const AdminPortal = () => {
 
   const handleLogout = () => {
     sessionStorage.removeItem(SESSION_KEY);
+    sessionStorage.removeItem(USERS_KEY);
     setIsAuthenticated(false);
     setCredentials({ username: '', password: '' });
+    window.location.href = '/?logout=1';
   };
+  useEffect(() => {
+    const raw = sessionStorage.getItem(USERS_KEY);
+    if (raw) setCurrentUser(JSON.parse(raw) as UserRecord);
+  }, []);
+  const isAdmin = currentUser?.role === 'admin';
+  const canSeeReservations = isAdmin || currentUser?.role === 'modelo';
+  const canSeeModels = isAdmin || currentUser?.role === 'marketing';
+  const canSeeContacts = isAdmin;
+  useEffect(() => {
+    if (canSeeReservations) return;
+    if (canSeeModels) setActiveTab('models');
+    else if (canSeeContacts) setActiveTab('contacts');
+  }, [canSeeReservations, canSeeModels, canSeeContacts]);
 
   const persistModel = async (record: ModelRecord, isNew: boolean) => {
     upsertLocalRecord('models', record);
@@ -424,13 +458,16 @@ export const AdminPortal = () => {
 
   const visibleReservations = useMemo(() => {
     const base = reservations.filter((reservation) => (selectedModelId ? reservation.modelId === selectedModelId : true));
-    return base.filter((reservation) => {
+    const roleScoped = currentUser?.role === 'modelo'
+      ? base.filter((reservation) => reservation.status === 'active' && reservation.modelName.toLowerCase().includes(currentUser.username.toLowerCase()))
+      : base;
+    return roleScoped.filter((reservation) => {
       if (reservationPeriod === 'day') return reservation.reservationDate === reservationDateFilter;
       if (reservationPeriod === 'month') return reservation.reservationDate.startsWith(reservationMonthFilter);
       if (reservationPeriod === 'year') return reservation.reservationDate.startsWith(reservationYearFilter);
       return true;
     });
-  }, [reservations, selectedModelId, reservationPeriod, reservationDateFilter, reservationMonthFilter, reservationYearFilter]);
+  }, [reservations, selectedModelId, reservationPeriod, reservationDateFilter, reservationMonthFilter, reservationYearFilter, currentUser]);
 
   const reservationByStatus = useMemo(() => ({
     new: visibleReservations.filter((item) => item.status === 'new'),
@@ -484,7 +521,7 @@ export const AdminPortal = () => {
       <aside className="w-72 bg-brand-black text-brand-ivory flex flex-col shrink-0">
         <div className="p-8 border-b border-white/10"><p className="text-[10px] uppercase tracking-[0.45em] text-brand-gold mb-2">Administrador</p><h2 className="text-2xl font-serif tracking-[0.18em] uppercase">Mon Amour</h2></div>
         <nav className="flex-1 p-6 space-y-2">
-          {[{ id: 'reservations', icon: CalendarDays, label: 'Panel de Reservas' }, { id: 'models', icon: Users, label: 'Panel de Modelos' }, { id: 'contacts', icon: MessageSquare, label: 'Panel de Contacto' }].map((tab) => (
+          {[canSeeReservations && { id: 'reservations', icon: CalendarDays, label: 'Panel de Reservas' }, canSeeModels && { id: 'models', icon: Users, label: 'Panel de Modelos' }, canSeeContacts && { id: 'contacts', icon: MessageSquare, label: 'Panel de Contacto' }, isAdmin && { id: 'users', icon: Users, label: 'Panel de Usuarios' }].filter(Boolean).map((tab: any) => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id as AdminTab)} className={cn('w-full flex items-center space-x-4 px-4 py-3 text-sm transition-all', activeTab === tab.id ? 'bg-brand-gold text-brand-black' : 'hover:bg-white/5')}><tab.icon className="w-4 h-4" /><span>{tab.label}</span></button>
           ))}
         </nav>
@@ -495,7 +532,7 @@ export const AdminPortal = () => {
         <header className="flex justify-between items-center mb-10 gap-4 flex-wrap">
           <div>
             <p className="text-[10px] uppercase tracking-[0.4em] text-brand-gold">Backoffice</p>
-            <h1 className="text-3xl font-serif mt-2">{activeTab === 'reservations' ? 'Reservas y clientes' : activeTab === 'models' ? 'Gestión de modelos' : 'Seguimiento de contactos'}</h1>
+            <h1 className="text-3xl font-serif mt-2">{activeTab === 'reservations' ? 'Reservas y clientes' : activeTab === 'models' ? 'Gestión de modelos' : activeTab === 'contacts' ? 'Seguimiento de contactos' : 'Gestión de usuarios'}</h1>
           </div>
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-white px-5 py-4 premium-shadow"><p className="text-[10px] uppercase tracking-widest text-brand-gray">Modelos</p><p className="text-2xl font-serif">{models.length}</p></div>
@@ -552,6 +589,18 @@ export const AdminPortal = () => {
                     <div key={item.modelId} className="border border-brand-black/5 p-4">
                       <p className="font-medium">{item.modelName}</p>
                       <p className="text-2xl font-serif mt-2">{item.total}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-3">
+                <h4 className="text-xl font-serif">Dashboard de citas e ingresos promedio</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {incomeByModel.map((item) => (
+                    <div key={item.modelName} className="border border-brand-black/5 p-4">
+                      <p className="font-medium">{item.modelName}</p>
+                      <p className="text-sm text-brand-gray">Promedio por cita: {(item.total / Math.max(item.reservations, 1)).toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}</p>
+                      <div className="mt-3 h-2 bg-brand-black/10"><div className="h-full bg-brand-gold" style={{ width: `${Math.min(100, item.reservations * 10)}%` }} /></div>
                     </div>
                   ))}
                 </div>
@@ -731,6 +780,19 @@ export const AdminPortal = () => {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          </div>
+        )}
+        {activeTab === 'users' && isAdmin && (
+          <div className="space-y-6">
+            <div className="bg-white p-6 premium-shadow space-y-4">
+              <h3 className="text-2xl font-serif">Crear usuario</h3>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <input value={newUser.username} onChange={(e) => setNewUser((prev) => ({ ...prev, username: e.target.value }))} placeholder="Usuario" className="border border-brand-black/10 px-4 py-3" />
+                <input value={newUser.password} onChange={(e) => setNewUser((prev) => ({ ...prev, password: e.target.value }))} placeholder="Contraseña" className="border border-brand-black/10 px-4 py-3" />
+                <select value={newUser.role} onChange={(e) => setNewUser((prev) => ({ ...prev, role: e.target.value as UserRole }))} className="border border-brand-black/10 px-4 py-3"><option value="admin">admin</option><option value="modelo">modelo</option><option value="marketing">marketing</option></select>
+                <Button onClick={() => { const record = { id: createLocalId('user'), ...newUser }; const next = [...users, record]; setUsers(next); writeLocalCollection('users', next); setNewUser({ username: '', password: '', role: 'modelo' }); }}>Crear</Button>
               </div>
             </div>
           </div>
