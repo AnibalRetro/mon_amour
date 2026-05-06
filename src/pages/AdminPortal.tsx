@@ -195,10 +195,62 @@ export const AdminPortal = () => {
   const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
 
   useEffect(() => {
-    const seeded = readLocalCollection<UserRecord>('users');
-    if (!seeded.length) {
-      writeLocalCollection('users', [{ id: 'admin-default', username: DEFAULT_USER, password: DEFAULT_PASSWORD, role: 'admin', fullName: 'Administrador' }]);
+    const seededUsers = readLocalCollection<UserRecord>('users');
+    if (!seededUsers.length) {
+      writeLocalCollection('users', [
+        { id: 'admin-default', username: DEFAULT_USER, password: DEFAULT_PASSWORD, role: 'admin', fullName: 'Administrador General', permissions: permissionOptions },
+        { id: 'modelo-default', username: 'modelo.demo', password: 'modelo2026', role: 'modelo', fullName: 'Modelo Demo', permissions: ['models:view', 'reservations:view'] },
+        { id: 'marketing-default', username: 'marketing.demo', password: 'marketing2026', role: 'marketing', fullName: 'Marketing Demo', permissions: ['contacts:view', 'models:view'] },
+      ]);
     }
+
+    const seededModels = readLocalCollection<ModelRecord>('models');
+    if (!seededModels.length) {
+      writeLocalCollection('models', [
+        {
+          id: 'model-sample-1',
+          name: 'Ariana Sol',
+          slug: 'ariana-sol',
+          city: 'Madrid',
+          category: 'Editorial',
+          cover: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=900&q=80',
+          gallery: [
+            'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=900&q=80',
+            'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=900&q=80',
+          ],
+          short_desc: 'Modelo editorial con enfoque en campañas premium.',
+          full_desc: 'Especializada en moda, belleza y fotografía comercial para marcas internacionales.',
+          height: '1.76m',
+          experience: '8 años',
+          languages: 'ES, EN',
+          availability: true,
+          tags: ['editorial', 'fashion', 'beauty'],
+          featured: true,
+          archived: false,
+          displayOrder: 1,
+        },
+        {
+          id: 'model-sample-2',
+          name: 'Valentina Noir',
+          slug: 'valentina-noir',
+          city: 'Barcelona',
+          category: 'Comercial',
+          cover: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=900&q=80',
+          gallery: ['https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=900&q=80'],
+          short_desc: 'Imagen fresca para campañas de lifestyle y e-commerce.',
+          full_desc: 'Perfil versátil para publicidad digital, catálogos y lanzamiento de productos.',
+          height: '1.73m',
+          experience: '5 años',
+          languages: 'ES, EN, IT',
+          availability: true,
+          tags: ['lifestyle', 'ecommerce'],
+          featured: false,
+          archived: false,
+          displayOrder: 2,
+        },
+      ]);
+    }
+
     setUsers(readLocalCollection<UserRecord>('users'));
     if (isAuthenticated) fetchData();
     else setLoading(false);

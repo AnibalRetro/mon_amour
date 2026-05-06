@@ -3,6 +3,7 @@ export const STORAGE_KEYS = {
   reservations: 'mon_amour_reservations',
   leads: 'mon_amour_leads',
   users: 'mon_amour_users',
+  pagesDraft: 'mon_amour_pages_draft',
 } as const;
 
 export type StorageKey = keyof typeof STORAGE_KEYS;
