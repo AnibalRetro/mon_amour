@@ -61,7 +61,8 @@ export const Footer = () => {
       </div>
 
       <div className="max-w-7xl mx-auto mt-10 flex flex-col md:row justify-between items-center text-[10px] uppercase tracking-widest text-brand-gray space-y-4 md:space-y-0">
-        <p>© 2026 Mon Amour. Todos los derechos reservados.</p>
+        <p>© 2026 Make IT Group y Asociación Mexicana de Ingeniería.</p>
+        <p>Todos los derechos reservados.</p>
         <div className="flex space-x-8">
           <span className="cursor-pointer hover:text-brand-ivory transition-colors">Aviso de Privacidad</span>
           <span className="cursor-pointer hover:text-brand-ivory transition-colors">Términos y Condiciones</span>
