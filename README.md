@@ -1,20 +1,35 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+Archivos incluidos en este parche:
+- src/components/Navbar.tsx
+- src/components/Footer.tsx
+- src/index.css
+- src/pages/Home.tsx
+- src/pages/About.tsx
+- src/pages/Catalog.tsx
+- src/pages/Contact.tsx
+- src/pages/AdminPortal.tsx
 
-# Run and deploy your AI Studio app
+Notas:
+1. La marca se actualiza a Mon Amour.
+2. No se tocaron las transiciones globales del sitio.
+3. El popup del catálogo ahora incluye:
+   - carrusel funcional
+   - calendario mensual de disponibilidad
+   - reserva con nombre, teléfono y correo
+   - mensaje de confirmación
+4. El admin ahora usa login por usuario y contraseña basado en variables:
+   - VITE_ADMIN_USER
+   - VITE_ADMIN_PASS
+   Si no existen, usa:
+   - admin
+   - monamour2026
+5. El panel admin queda dividido en:
+   - Reservas
+   - Modelos
+   - Contacto
+6. La gestión de modelos usa URLs para portada y galería. No se implementó upload binario a Firebase Storage en este parche.
+7. La colección esperada para reservas es:
+   - reservations
 
-This contains everything you need to run your app locally.
-
-View your app in AI Studio: https://ai.studio/apps/c090c09c-9cea-43af-835a-d92fca5c9d9d
-
-## Run Locally
-
-**Prerequisites:**  Node.js
-
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+Sugerencia para .env.local:
+VITE_ADMIN_USER=admin
+VITE_ADMIN_PASS=monamour2026

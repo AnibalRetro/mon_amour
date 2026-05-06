@@ -5,51 +5,242 @@
       "description": "Professional profile of a model in the agency.",
       "type": "object",
       "properties": {
-        "name": { "type": "string", "description": "Full name or artistic name" },
-        "slug": { "type": "string", "description": "URL friendly identifier" },
-        "cover": { "type": "string", "description": "Main profile image URL" },
-        "gallery": { "type": "array", "items": { "type": "string" }, "description": "Portfolio images" },
-        "city": { "type": "string", "description": "Base city" },
-        "category": { "type": "string", "description": "Specialty (Fashion, Commercial, etc.)" },
-        "short_desc": { "type": "string", "description": "Brief intro" },
-        "full_desc": { "type": "string", "description": "Detailed biography" },
-        "experience": { "type": "string", "description": "Career highlights" },
-        "languages": { "type": "string", "description": "Spoken languages" },
-        "height": { "type": "string", "description": "Height in cm/ft" },
-        "age_range": { "type": "string", "description": "Age range" },
-        "availability": { "type": "boolean", "description": "Is currently bookable" },
-        "tags": { "type": "array", "items": { "type": "string" }, "description": "Searchable tags" },
-        "active": { "type": "boolean", "description": "Visible in catalog" },
-        "archived": { "type": "boolean", "description": "Hidden but preserved" },
-        "created_at": { "type": "string", "format": "date-time" },
-        "updated_at": { "type": "string", "format": "date-time" }
+        "name": {
+          "type": "string",
+          "description": "Full name or artistic name"
+        },
+        "slug": {
+          "type": "string",
+          "description": "URL friendly identifier"
+        },
+        "cover": {
+          "type": "string",
+          "description": "Main profile image URL"
+        },
+        "gallery": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Portfolio images"
+        },
+        "city": {
+          "type": "string",
+          "description": "Base city"
+        },
+        "category": {
+          "type": "string",
+          "description": "Specialty (Fashion, Commercial, etc.)"
+        },
+        "short_desc": {
+          "type": "string",
+          "description": "Brief intro"
+        },
+        "full_desc": {
+          "type": "string",
+          "description": "Detailed biography"
+        },
+        "experience": {
+          "type": "string",
+          "description": "Career highlights"
+        },
+        "languages": {
+          "type": "string",
+          "description": "Spoken languages"
+        },
+        "height": {
+          "type": "string",
+          "description": "Height in cm/ft"
+        },
+        "age_range": {
+          "type": "string",
+          "description": "Age range"
+        },
+        "availability": {
+          "type": "boolean",
+          "description": "Is currently bookable"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Searchable tags"
+        },
+        "active": {
+          "type": "boolean",
+          "description": "Visible in catalog"
+        },
+        "archived": {
+          "type": "boolean",
+          "description": "Hidden but preserved"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "featured": {
+          "type": "boolean",
+          "description": "Whether this model is featured on the home page"
+        },
+        "displayOrder": {
+          "type": "number",
+          "description": "Manual ordering value for catalog display"
+        }
       },
-      "required": ["name", "slug", "cover", "city", "category"]
+      "required": [
+        "name",
+        "slug",
+        "cover",
+        "city",
+        "category"
+      ]
     },
     "lead": {
       "title": "Lead / Request",
       "description": "Business contact, booking request or talent application.",
       "type": "object",
       "properties": {
-        "type": { "type": "string", "enum": ["commercial", "booking", "applicant", "direct"], "description": "Type of request" },
-        "name": { "type": "string", "description": "Contact name" },
-        "company": { "type": "string", "description": "Company name (optional)" },
-        "email": { "type": "string", "format": "email", "description": "Contact email" },
-        "phone": { "type": "string", "description": "Contact phone" },
-        "city": { "type": "string", "description": "Request city" },
-        "requested_date": { "type": "string", "description": "Proposed date" },
-        "requested_time": { "type": "string", "description": "Proposed time" },
-        "service_type": { "type": "string", "description": "Service needed" },
-        "model_id": { "type": "string", "description": "Referenced model ID" },
-        "message": { "type": "string", "description": "Additional details" },
-        "portfolio_url": { "type": "string", "description": "Applicant portfolio" },
-        "social_media": { "type": "string", "description": "Social media links" },
-        "attachments": { "type": "array", "items": { "type": "string" }, "description": "Uploaded files" },
-        "status": { "type": "string", "enum": ["new", "contacted", "follow-up", "closed"], "description": "Internal status" },
-        "internal_notes": { "type": "string", "description": "Admin notes" },
-        "created_at": { "type": "string", "format": "date-time" }
+        "type": {
+          "type": "string",
+          "enum": [
+            "commercial",
+            "booking",
+            "applicant",
+            "direct"
+          ],
+          "description": "Type of request"
+        },
+        "name": {
+          "type": "string",
+          "description": "Contact name"
+        },
+        "company": {
+          "type": "string",
+          "description": "Company name (optional)"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Contact email"
+        },
+        "phone": {
+          "type": "string",
+          "description": "Contact phone"
+        },
+        "city": {
+          "type": "string",
+          "description": "Request city"
+        },
+        "requested_date": {
+          "type": "string",
+          "description": "Proposed date"
+        },
+        "requested_time": {
+          "type": "string",
+          "description": "Proposed time"
+        },
+        "service_type": {
+          "type": "string",
+          "description": "Service needed"
+        },
+        "model_id": {
+          "type": "string",
+          "description": "Referenced model ID"
+        },
+        "message": {
+          "type": "string",
+          "description": "Additional details"
+        },
+        "portfolio_url": {
+          "type": "string",
+          "description": "Applicant portfolio"
+        },
+        "social_media": {
+          "type": "string",
+          "description": "Social media links"
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Uploaded files"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "new",
+            "contacted",
+            "follow-up",
+            "closed"
+          ],
+          "description": "Internal status"
+        },
+        "internal_notes": {
+          "type": "string",
+          "description": "Admin notes"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        }
       },
-      "required": ["type", "name", "email"]
+      "required": [
+        "type",
+        "name",
+        "email"
+      ]
+    },
+    "reservation": {
+      "title": "Reservation",
+      "description": "Reservation created from a model calendar.",
+      "type": "object",
+      "properties": {
+        "modelId": {
+          "type": "string"
+        },
+        "modelName": {
+          "type": "string"
+        },
+        "reservationDate": {
+          "type": "string"
+        },
+        "customerName": {
+          "type": "string"
+        },
+        "customerEmail": {
+          "type": "string",
+          "format": "email"
+        },
+        "customerPhone": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "new",
+            "active",
+            "completed",
+            "cancelled"
+          ]
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "modelId",
+        "modelName",
+        "reservationDate",
+        "customerName",
+        "customerEmail"
+      ]
     }
   },
   "firestore": {
@@ -60,6 +251,10 @@
     "leads": {
       "schema": "lead",
       "description": "Private requests and applications."
+    },
+    "reservations": {
+      "schema": "reservation",
+      "description": "Model reservations from the public catalog calendar."
     }
   }
 }
